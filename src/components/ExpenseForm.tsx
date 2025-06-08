@@ -99,19 +99,42 @@ const ExpenseForm = () => {
       </div>
 
       <div className="form-group">
-        <select
-          name="category"
-          value={formData.category}
-          onChange={handleChange}
-          required
-        >
-          <option value="">Select category</option>
-          <option value="travel">Travel</option>
-          <option value="meals">Meals</option>
-          <option value="accommodation">Accommodation</option>
-          <option value="office">Office Supplies</option>
-          <option value="other">Other</option>
-        </select>
+        <p className="radio-label">Category</p>
+        <div className="radio-group">
+          <label className="radio-option">
+            <input
+              type="radio"
+              name="category"
+              value="general"
+              checked={formData.category === "general"}
+              onChange={handleChange}
+              required
+            />
+            <span>General Expense</span>
+          </label>
+          <label className="radio-option">
+            <input
+              type="radio"
+              name="category"
+              value="travel"
+              checked={formData.category === "travel"}
+              onChange={handleChange}
+              required
+            />
+            <span>Travel Expense</span>
+          </label>
+          <label className="radio-option">
+            <input
+              type="radio"
+              name="category"
+              value="representation"
+              checked={formData.category === "representation"}
+              onChange={handleChange}
+              required
+            />
+            <span>Representation</span>
+          </label>
+        </div>
       </div>
 
       <div className="form-group">
