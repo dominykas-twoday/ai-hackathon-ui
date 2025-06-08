@@ -4,9 +4,9 @@ import "./ExpenseForm.css";
 const ExpenseForm = () => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    category: "",
+    category: "general",
     receipt: null as File | null,
-    reimbursementEntity: "",
+    reimbursementEntity: "company",
     projectCompanyName: "",
     projectName: "",
   });

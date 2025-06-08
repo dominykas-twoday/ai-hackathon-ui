@@ -79,6 +79,7 @@
   padding: 0.75rem;
   border-radius: 4px;
   transition: background-color 0.2s;
+  min-height: 2.5rem;
 }
 
 .radio-option:hover {
@@ -89,10 +90,18 @@
   width: auto;
   margin: 0;
   cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  top: 0;
+  transform: translateY(0);
+  align-self: center;
 }
 
 .radio-option input[type="radio"] + span {
   margin-left: 0.75rem;
+  line-height: 1.2;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .radio-option input[type="radio"]:checked + span {
