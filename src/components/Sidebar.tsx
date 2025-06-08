@@ -2,6 +2,11 @@ import { NavLink } from "react-router-dom";
 import "./Sidebar.css";
 
 export const Sidebar = () => {
+  const handleLogout = () => {
+    alert("Logged out!");
+    // Add actual logout logic here
+  };
+
   return (
     <div className="sidebar">
       <div className="sidebar-header">
@@ -105,6 +110,9 @@ export const Sidebar = () => {
           <span>User Management</span>
         </NavLink>
       </nav>
+      <button className="logout-button" onClick={handleLogout}>
+        Logout
+      </button>
     </div>
   );
 };
