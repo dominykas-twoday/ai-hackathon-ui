@@ -31,7 +31,7 @@ const Login = () => {
   return (
     <div className="login-container">
       <form onSubmit={handleSubmit} className="login-form">
-        <h1>Expense Portal</h1>
+        <h1>Expense manager</h1>
         <p className="subtitle">Submit and track your company expenses</p>
         <div className="form-group">
           <input
