@@ -343,8 +343,8 @@ const ExpenseForm = () => {
           onChange={handleChange}
           required
         >
+          <option value="COACH">COACH</option>
           <option value="COMITET">COMITET</option>
-          <option value="DIRECTOR">DIRECTOR</option>
         </select>
       </div>
       <div className="form-group">
