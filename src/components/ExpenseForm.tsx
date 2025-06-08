@@ -35,6 +35,9 @@ const ExpenseForm = () => {
   };
 
   const nextStep = () => {
+    if (step === 1 && !formData.receipt) {
+      return;
+    }
     setStep((prev) => prev + 1);
   };
 
@@ -60,7 +63,12 @@ const ExpenseForm = () => {
           <p className="file-name">{formData.receipt.name}</p>
         )}
       </div>
-      <button type="button" className="next-button" onClick={nextStep}>
+      <button
+        type="button"
+        className={`next-button ${!formData.receipt ? "disabled" : ""}`}
+        onClick={nextStep}
+        disabled={!formData.receipt}
+      >
         Next Step
       </button>
     </>

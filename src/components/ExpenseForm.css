@@ -75,9 +75,8 @@
 .radio-option {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
   cursor: pointer;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border-radius: 4px;
   transition: background-color 0.2s;
 }
@@ -90,6 +89,10 @@
   width: auto;
   margin: 0;
   cursor: pointer;
+}
+
+.radio-option input[type="radio"] + span {
+  margin-left: 0.75rem;
 }
 
 .radio-option input[type="radio"]:checked + span {
@@ -153,13 +156,20 @@
   flex: 1;
 }
 
+.next-button.disabled,
+.next-button:disabled {
+  background-color: #404040;
+  color: #666666;
+  cursor: not-allowed;
+}
+
 .back-button {
   background-color: #404040;
   color: white;
   flex: 1;
 }
 
-.next-button:hover,
+.next-button:hover:not(:disabled),
 .submit-button:hover {
   background-color: #535bf2;
 }
@@ -168,7 +178,7 @@
   background-color: #4a4a4a;
 }
 
-.next-button:active,
+.next-button:active:not(:disabled),
 .submit-button:active {
   background-color: #434cbf;
 }
