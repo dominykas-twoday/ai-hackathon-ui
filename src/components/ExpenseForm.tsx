@@ -1,20 +1,6 @@
 import { useState } from "react";
 import "./ExpenseForm.css";
 
-const mockFetchExpenseDetails = async () => {
-  // Simulate backend call
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        supplierName: "Acme Supplies Ltd.",
-        purchaseDate: "2024-06-01",
-        invoiceAmount: "123.45",
-        paymentMethod: "Credit Card",
-      });
-    }, 800);
-  });
-};
-
 const ExpenseForm = () => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -27,11 +13,26 @@ const ExpenseForm = () => {
     purchaseDate: "",
     invoiceAmount: "",
     paymentMethod: "",
+    documentId: undefined as number | undefined,
+    originalFilename: "",
+    contentType: "",
+    fileSize: undefined as number | undefined,
+    processingStatus: "",
+    errorMessage: null as string | null,
+    createdAt: "",
+    updatedAt: "",
+    userSelectedApproval: "COMITET",
+    notes: "",
   });
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -49,26 +50,82 @@ const ExpenseForm = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    // Handle form submission logic here
+    setSubmitLoading(true);
+    setSubmitMessage("");
+    try {
+      const token = localStorage.getItem("auth_token");
+      const payload = {
+        documentId: formData.documentId,
+        supplierName: formData.supplierName,
+        totalAmount: formData.invoiceAmount,
+        purchaseDate: formData.purchaseDate,
+        userSelectedApproval: formData.userSelectedApproval,
+        notes: formData.notes,
+      };
+      const res = await fetch("http://localhost:8080/api/tax-returns", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        setSubmitMessage("Expense submitted successfully!");
+      } else {
+        setSubmitMessage("Failed to submit expense. Please try again.");
+      }
+    } catch {
+      setSubmitMessage("Failed to submit expense. Please try again.");
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   const nextStep = async () => {
+    setUploadError("");
     if (step === 1 && !formData.receipt) {
       return;
     }
     if (step === 1) {
       setLoadingDetails(true);
-      // Fetch details from backend (mocked)
-      const details = (await mockFetchExpenseDetails()) as {
-        supplierName: string;
-        purchaseDate: string;
-        invoiceAmount: string;
-        paymentMethod: string;
-      };
-      setFormData((prev) => ({ ...prev, ...details }));
+      // Upload file to backend
+      const data = new FormData();
+      data.append("file", formData.receipt!);
+      try {
+        const token = localStorage.getItem("auth_token");
+        const res = await fetch("http://localhost:8080/api/documents/upload", {
+          method: "POST",
+          body: data,
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (!res.ok) {
+          throw new Error("Upload failed");
+        }
+        const docData = await res.json();
+        setFormData((prev) => ({
+          ...prev,
+          documentId: docData.documentId,
+          originalFilename: docData.originalFilename,
+          contentType: docData.contentType,
+          fileSize: docData.fileSize,
+          processingStatus: docData.processingStatus,
+          errorMessage: docData.errorMessage,
+          createdAt: docData.createdAt,
+          updatedAt: docData.updatedAt,
+          supplierName: docData.supplierName || "",
+          purchaseDate: docData.purchaseDate || "",
+          invoiceAmount: docData.totalAmount
+            ? docData.totalAmount.replace(/[^\d.,]/g, "")
+            : "",
+        }));
+      } catch {
+        setUploadError("Failed to upload file. Please try again.");
+        setLoadingDetails(false);
+        return;
+      }
       setLoadingDetails(false);
     }
     setStep((prev) => prev + 1);
@@ -102,8 +159,11 @@ const ExpenseForm = () => {
         onClick={nextStep}
         disabled={!formData.receipt || loadingDetails}
       >
-        {loadingDetails ? "Loading..." : "Next Step"}
+        {loadingDetails ? "Uploading..." : "Next Step"}
       </button>
+      {uploadError && (
+        <div style={{ color: "#ef4444", marginTop: 12 }}>{uploadError}</div>
+      )}
     </>
   );
 
@@ -134,13 +194,11 @@ const ExpenseForm = () => {
       <div className="form-group">
         <label>Invoice Amount</label>
         <input
-          type="number"
+          type="text"
           name="invoiceAmount"
           value={formData.invoiceAmount}
           onChange={handleChange}
           required
-          min="0"
-          step="0.01"
         />
       </div>
       <div className="form-group">
@@ -277,14 +335,51 @@ const ExpenseForm = () => {
         )}
       </div>
 
+      <div className="form-group">
+        <label>User Selected Approval</label>
+        <select
+          name="userSelectedApproval"
+          value={formData.userSelectedApproval}
+          onChange={handleChange}
+          required
+        >
+          <option value="COMITET">COMITET</option>
+          <option value="DIRECTOR">DIRECTOR</option>
+        </select>
+      </div>
+      <div className="form-group">
+        <label>Notes</label>
+        <textarea
+          name="notes"
+          value={formData.notes}
+          onChange={handleChange}
+          rows={3}
+          placeholder="Additional notes (optional)"
+        />
+      </div>
       <div className="button-group">
         <button type="button" className="back-button" onClick={prevStep}>
           Back
         </button>
-        <button type="submit" className="submit-button">
-          Submit Expense
+        <button
+          type="submit"
+          className="submit-button"
+          disabled={submitLoading}
+        >
+          {submitLoading ? "Submitting..." : "Submit Expense"}
         </button>
       </div>
+      {submitMessage && (
+        <div
+          style={{
+            marginTop: 12,
+            color: submitMessage.includes("success") ? "#1de782" : "#ef4444",
+            textAlign: "center",
+          }}
+        >
+          {submitMessage}
+        </div>
+      )}
     </>
   );
 

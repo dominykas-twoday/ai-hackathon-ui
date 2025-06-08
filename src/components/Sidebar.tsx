@@ -3,8 +3,8 @@ import "./Sidebar.css";
 
 export const Sidebar = () => {
   const handleLogout = () => {
-    alert("Logged out!");
-    // Add actual logout logic here
+    localStorage.removeItem("auth_token");
+    window.location.reload();
   };
 
   return (
