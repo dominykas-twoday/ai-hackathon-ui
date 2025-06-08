@@ -60,6 +60,48 @@
   min-height: 100px;
 }
 
+.radio-label {
+  margin-bottom: 0.75rem;
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.radio-option:hover {
+  background-color: #383838;
+}
+
+.radio-option input[type="radio"] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+.radio-option input[type="radio"]:checked + span {
+  color: #646cff;
+}
+
+.project-details {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #404040;
+}
+
 .file-upload {
   display: block;
   padding: 2rem;
