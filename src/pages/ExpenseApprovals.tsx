@@ -1,60 +1,28 @@
 import { useEffect, useState } from "react";
-import type { Expense, ExpenseStatus } from "../types/Expense";
 import "./ExpenseApprovals.css";
 
-// Mock data for development
-const mockExpenses: Expense[] = [
-  {
-    id: "1",
-    userId: "1",
-    userName: "John Doe",
-    category: "travel",
-    amount: 150.5,
-    currency: "EUR",
-    description: "Train ticket to client meeting",
-    receiptUrl: "/receipts/train-ticket.jpg",
-    status: "pending",
-    reimbursementEntity: "company",
-    createdAt: "2024-03-15T10:00:00Z",
-    updatedAt: "2024-03-15T10:00:00Z",
-  },
-  {
-    id: "2",
-    userId: "2",
-    userName: "Jane Smith",
-    category: "representation",
-    amount: 85.0,
-    currency: "EUR",
-    description: "Client dinner",
-    receiptUrl: "/receipts/dinner.jpg",
-    status: "pending",
-    reimbursementEntity: "project",
-    projectCompanyName: "Tech Corp",
-    projectName: "Website Redesign",
-    createdAt: "2024-03-14T15:30:00Z",
-    updatedAt: "2024-03-14T15:30:00Z",
-  },
-  {
-    id: "3",
-    userId: "3",
-    userName: "Bob Wilson",
-    category: "general",
-    amount: 45.99,
-    currency: "EUR",
-    description: "Office supplies",
-    receiptUrl: "/receipts/supplies.jpg",
-    status: "approved",
-    reimbursementEntity: "company",
-    createdAt: "2024-03-13T09:15:00Z",
-    updatedAt: "2024-03-13T09:15:00Z",
-  },
-];
+interface TaxReturn {
+  id: number;
+  documentId: number;
+  supplierName: string;
+  totalAmount: number;
+  purchaseDate: string;
+  userSelectedApproval: string;
+  finalApprovalType: string;
+  requiresDirectorApproval: boolean;
+  status: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const ExpenseApprovals = () => {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenses, setExpenses] = useState<TaxReturn[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<TaxReturn | null>(
+    null
+  );
 
   useEffect(() => {
     fetchExpenses();
@@ -63,9 +31,22 @@ const ExpenseApprovals = () => {
   const fetchExpenses = async () => {
     try {
       setLoading(true);
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setExpenses(mockExpenses);
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(
+        "http://localhost:8080/api/tax-returns/status/PENDING",
+        {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch pending expenses");
+      }
+
+      const data = await res.json();
+      setExpenses(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -73,39 +54,30 @@ const ExpenseApprovals = () => {
     }
   };
 
-  const handleStatusChange = async (
-    expenseId: string,
-    newStatus: ExpenseStatus
-  ) => {
+  const handleStatusChange = async (expenseId: number, newStatus: string) => {
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      setExpenses(
-        expenses.map((expense) =>
-          expense.id === expenseId
-            ? {
-                ...expense,
-                status: newStatus,
-                updatedAt: new Date().toISOString(),
-              }
-            : expense
-        )
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(
+        `http://localhost:8080/api/tax-returns/${expenseId}/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ status: newStatus }),
+        }
       );
+
+      if (!res.ok) {
+        throw new Error("Failed to update expense status");
+      }
+
+      // Refresh the list after successful update
+      await fetchExpenses();
       setSelectedExpense(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
-    }
-  };
-
-  const getStatusClass = (status: ExpenseStatus) => {
-    switch (status) {
-      case "approved":
-        return "status-approved";
-      case "rejected":
-        return "status-rejected";
-      default:
-        return "status-pending";
     }
   };
 
@@ -124,11 +96,13 @@ const ExpenseApprovals = () => {
         <table className="expenses-table">
           <thead>
             <tr>
-              <th>UsPendinger</th>
-              <th>Category</th>
+              <th>Supplier</th>
               <th>Amount</th>
-              <th>Description</th>
-              <th>Status</th>
+              <th>Purchase Date</th>
+              <th>User Approval</th>
+              <th>Final Approval</th>
+              <th>Director Approval</th>
+              <th>Notes</th>
               <th>Created</th>
               <th>Actions</th>
             </tr>
@@ -136,45 +110,29 @@ const ExpenseApprovals = () => {
           <tbody>
             {expenses.map((expense) => (
               <tr key={expense.id}>
-                <td>{expense.userName}</td>
-                <td>{expense.category}</td>
-                <td>{`${expense.amount} ${expense.currency}`}</td>
-                <td>{expense.description}</td>
-                <td>
-                  <span
-                    className={`status-badge ${getStatusClass(expense.status)}`}
-                  >
-                    {expense.status}
-                  </span>
-                </td>
+                <td>{expense.supplierName}</td>
+                <td>{expense.totalAmount}</td>
+                <td>{new Date(expense.purchaseDate).toLocaleDateString()}</td>
+                <td>{expense.userSelectedApproval}</td>
+                <td>{expense.finalApprovalType}</td>
+                <td>{expense.requiresDirectorApproval ? "Yes" : "No"}</td>
+                <td>{expense.notes}</td>
                 <td>{new Date(expense.createdAt).toLocaleDateString()}</td>
                 <td>
-                  {expense.status === "pending" && (
-                    <div className="action-buttons">
-                      <button
-                        className="approve-button"
-                        onClick={() =>
-                          handleStatusChange(expense.id, "approved")
-                        }
-                      >
-                        Approve
-                      </button>
-                      <button
-                        className="reject-button"
-                        onClick={() =>
-                          handleStatusChange(expense.id, "rejected")
-                        }
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  )}
-                  <button
-                    className="view-button"
-                    onClick={() => setSelectedExpense(expense)}
-                  >
-                    View Details
-                  </button>
+                  <div className="action-buttons">
+                    <button
+                      className="approve-button"
+                      onClick={() => handleStatusChange(expense.id, "APPROVED")}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      className="reject-button"
+                      onClick={() => handleStatusChange(expense.id, "REJECTED")}
+                    >
+                      Reject
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -188,47 +146,37 @@ const ExpenseApprovals = () => {
             <h2>Expense Details</h2>
             <div className="details-grid">
               <div className="detail-item">
-                <label>User:</label>
-                <span>{selectedExpense.userName}</span>
-              </div>
-              <div className="detail-item">
-                <label>Category:</label>
-                <span>{selectedExpense.category}</span>
+                <label>Supplier:</label>
+                <span>{selectedExpense.supplierName}</span>
               </div>
               <div className="detail-item">
                 <label>Amount:</label>
-                <span>{`${selectedExpense.amount} ${selectedExpense.currency}`}</span>
+                <span>{selectedExpense.totalAmount}</span>
               </div>
               <div className="detail-item">
-                <label>Description:</label>
-                <span>{selectedExpense.description}</span>
-              </div>
-              <div className="detail-item">
-                <label>Status:</label>
-                <span
-                  className={`status-badge ${getStatusClass(
-                    selectedExpense.status
-                  )}`}
-                >
-                  {selectedExpense.status}
+                <label>Purchase Date:</label>
+                <span>
+                  {new Date(selectedExpense.purchaseDate).toLocaleDateString()}
                 </span>
               </div>
               <div className="detail-item">
-                <label>Reimbursement:</label>
-                <span>{selectedExpense.reimbursementEntity}</span>
+                <label>User Approval:</label>
+                <span>{selectedExpense.userSelectedApproval}</span>
               </div>
-              {selectedExpense.projectCompanyName && (
-                <div className="detail-item">
-                  <label>Project Company:</label>
-                  <span>{selectedExpense.projectCompanyName}</span>
-                </div>
-              )}
-              {selectedExpense.projectName && (
-                <div className="detail-item">
-                  <label>Project Name:</label>
-                  <span>{selectedExpense.projectName}</span>
-                </div>
-              )}
+              <div className="detail-item">
+                <label>Final Approval:</label>
+                <span>{selectedExpense.finalApprovalType}</span>
+              </div>
+              <div className="detail-item">
+                <label>Director Approval Required:</label>
+                <span>
+                  {selectedExpense.requiresDirectorApproval ? "Yes" : "No"}
+                </span>
+              </div>
+              <div className="detail-item">
+                <label>Notes:</label>
+                <span>{selectedExpense.notes}</span>
+              </div>
               <div className="detail-item">
                 <label>Created:</label>
                 <span>
@@ -241,9 +189,6 @@ const ExpenseApprovals = () => {
                   {new Date(selectedExpense.updatedAt).toLocaleString()}
                 </span>
               </div>
-            </div>
-            <div className="receipt-preview">
-              <img src={selectedExpense.receiptUrl} alt="Receipt" />
             </div>
             <button
               className="close-button"
