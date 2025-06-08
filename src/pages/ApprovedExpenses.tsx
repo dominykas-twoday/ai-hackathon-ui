@@ -7,6 +7,9 @@ export const ApprovedExpenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userFilter, setUserFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [reFilter, setReFilter] = useState("");
 
   useEffect(() => {
     // Simulating API call to fetch approved expenses
@@ -84,6 +87,22 @@ export const ApprovedExpenses = () => {
     XLSX.writeFile(workbook, "approved_expenses.xlsx");
   };
 
+  // Filtering logic
+  const filteredExpenses = expenses.filter((expense) => {
+    return (
+      (userFilter === "" || expense.userName === userFilter) &&
+      (categoryFilter === "" || expense.category === categoryFilter) &&
+      (reFilter === "" || expense.reimbursementEntity === reFilter)
+    );
+  });
+
+  // Unique filter options
+  const userOptions = Array.from(new Set(expenses.map((e) => e.userName)));
+  const categoryOptions = Array.from(new Set(expenses.map((e) => e.category)));
+  const reOptions = Array.from(
+    new Set(expenses.map((e) => e.reimbursementEntity))
+  );
+
   if (loading) {
     return <div className="loading">Loading approved expenses...</div>;
   }
@@ -116,6 +135,59 @@ export const ApprovedExpenses = () => {
         </button>
       </div>
 
+      {/* Filter controls */}
+      <div
+        className="expenses-filters"
+        style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem" }}
+      >
+        <div>
+          <label style={{ color: "#a0a0a0", fontSize: "0.9rem" }}>User</label>
+          <select
+            value={userFilter}
+            onChange={(e) => setUserFilter(e.target.value)}
+          >
+            <option value="">All</option>
+            {userOptions.map((user) => (
+              <option key={user} value={user}>
+                {user}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={{ color: "#a0a0a0", fontSize: "0.9rem" }}>
+            Category
+          </label>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="">All</option>
+            {categoryOptions.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={{ color: "#a0a0a0", fontSize: "0.9rem" }}>
+            Reimbursement Entity
+          </label>
+          <select
+            value={reFilter}
+            onChange={(e) => setReFilter(e.target.value)}
+          >
+            <option value="">All</option>
+            {reOptions.map((re) => (
+              <option key={re} value={re}>
+                {re}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className="expenses-table-container">
         <table className="expenses-table">
           <thead>
@@ -131,7 +203,7 @@ export const ApprovedExpenses = () => {
             </tr>
           </thead>
           <tbody>
-            {expenses.map((expense) => (
+            {filteredExpenses.map((expense) => (
               <tr key={expense.id}>
                 <td>{expense.userName}</td>
                 <td>{expense.category}</td>
