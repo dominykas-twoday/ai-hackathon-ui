@@ -1,79 +1,74 @@
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
-import type { Expense, ExpenseStatus } from "../types/Expense";
 import "./ApprovedExpenses.css";
 
+interface TaxReturn {
+  id: number;
+  documentId: number;
+  supplierName: string;
+  totalAmount: number;
+  purchaseDate: string;
+  userSelectedApproval: string;
+  finalApprovalType: string;
+  requiresDirectorApproval: boolean;
+  status: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const ApprovedExpenses = () => {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenses, setExpenses] = useState<TaxReturn[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userFilter, setUserFilter] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [reFilter, setReFilter] = useState("");
+  const [supplierFilter, setSupplierFilter] = useState("");
+  const [approvalTypeFilter, setApprovalTypeFilter] = useState("");
 
   useEffect(() => {
-    // Simulating API call to fetch approved expenses
-    const fetchExpenses = async () => {
-      try {
-        // Mock data - replace with actual API call
-        const mockExpenses: Expense[] = [
-          {
-            id: "1",
-            userId: "user1",
-            userName: "John Doe",
-            category: "Travel",
-            amount: 150.0,
-            currency: "EUR",
-            description: "Train ticket to Berlin",
-            receiptUrl: "https://example.com/receipt1.jpg",
-            status: "approved" as ExpenseStatus,
-            reimbursementEntity: "Your Company",
-            createdAt: new Date("2024-03-15T10:00:00Z").toISOString(),
-            updatedAt: new Date("2024-03-16T14:30:00Z").toISOString(),
-          },
-          {
-            id: "2",
-            userId: "user2",
-            userName: "Jane Smith",
-            category: "Representation",
-            amount: 75.5,
-            currency: "EUR",
-            description: "Client lunch",
-            receiptUrl: "https://example.com/receipt2.jpg",
-            status: "approved" as ExpenseStatus,
-            reimbursementEntity: "Project Company",
-            projectCompanyName: "Tech Corp",
-            projectName: "Website Redesign",
-            createdAt: new Date("2024-03-14T15:20:00Z").toISOString(),
-            updatedAt: new Date("2024-03-15T09:15:00Z").toISOString(),
-          },
-        ];
-
-        setExpenses(mockExpenses);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching expenses:", error);
-        setError("Failed to fetch approved expenses");
-        setLoading(false);
-      }
-    };
-
     fetchExpenses();
   }, []);
+
+  const fetchExpenses = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(
+        "http://localhost:8080/api/tax-returns/status/APPROVED",
+        {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch approved expenses");
+      }
+
+      const data = await res.json();
+      setExpenses(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleExportToExcel = () => {
     // Prepare data for Excel export
     const exportData = expenses.map((expense) => ({
-      "User Name": expense.userName,
-      Category: expense.category,
-      Amount: expense.amount,
-      Currency: expense.currency,
-      Description: expense.description,
-      "Reimbursement Entity": expense.reimbursementEntity,
-      "Project Company": expense.projectCompanyName || "N/A",
-      "Project Name": expense.projectName || "N/A",
+      "Supplier Name": expense.supplierName,
+      "Total Amount": expense.totalAmount,
+      "Purchase Date": expense.purchaseDate,
+      "User Selected Approval": expense.userSelectedApproval,
+      "Final Approval Type": expense.finalApprovalType,
+      "Requires Director Approval": expense.requiresDirectorApproval
+        ? "Yes"
+        : "No",
+      Status: expense.status,
+      Notes: expense.notes,
       "Created Date": new Date(expense.createdAt).toLocaleDateString(),
-      "Approved Date": new Date(expense.updatedAt).toLocaleDateString(),
+      "Updated Date": new Date(expense.updatedAt).toLocaleDateString(),
     }));
 
     // Create worksheet
@@ -90,17 +85,21 @@ export const ApprovedExpenses = () => {
   // Filtering logic
   const filteredExpenses = expenses.filter((expense) => {
     return (
-      (userFilter === "" || expense.userName === userFilter) &&
-      (categoryFilter === "" || expense.category === categoryFilter) &&
-      (reFilter === "" || expense.reimbursementEntity === reFilter)
+      (supplierFilter === "" ||
+        expense.supplierName
+          .toLowerCase()
+          .includes(supplierFilter.toLowerCase())) &&
+      (approvalTypeFilter === "" ||
+        expense.finalApprovalType === approvalTypeFilter)
     );
   });
 
   // Unique filter options
-  const userOptions = Array.from(new Set(expenses.map((e) => e.userName)));
-  const categoryOptions = Array.from(new Set(expenses.map((e) => e.category)));
-  const reOptions = Array.from(
-    new Set(expenses.map((e) => e.reimbursementEntity))
+  const supplierOptions = Array.from(
+    new Set(expenses.map((e) => e.supplierName))
+  );
+  const approvalTypeOptions = Array.from(
+    new Set(expenses.map((e) => e.finalApprovalType))
   );
 
   if (loading) {
@@ -141,47 +140,33 @@ export const ApprovedExpenses = () => {
         style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem" }}
       >
         <div>
-          <label style={{ color: "#a0a0a0", fontSize: "0.9rem" }}>User</label>
+          <label style={{ color: "#a0a0a0", fontSize: "0.9rem" }}>
+            Supplier
+          </label>
           <select
-            value={userFilter}
-            onChange={(e) => setUserFilter(e.target.value)}
+            value={supplierFilter}
+            onChange={(e) => setSupplierFilter(e.target.value)}
           >
             <option value="">All</option>
-            {userOptions.map((user) => (
-              <option key={user} value={user}>
-                {user}
+            {supplierOptions.map((supplier) => (
+              <option key={supplier} value={supplier}>
+                {supplier}
               </option>
             ))}
           </select>
         </div>
         <div>
           <label style={{ color: "#a0a0a0", fontSize: "0.9rem" }}>
-            Category
+            Approval Type
           </label>
           <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
+            value={approvalTypeFilter}
+            onChange={(e) => setApprovalTypeFilter(e.target.value)}
           >
             <option value="">All</option>
-            {categoryOptions.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label style={{ color: "#a0a0a0", fontSize: "0.9rem" }}>
-            Reimbursement Entity
-          </label>
-          <select
-            value={reFilter}
-            onChange={(e) => setReFilter(e.target.value)}
-          >
-            <option value="">All</option>
-            {reOptions.map((re) => (
-              <option key={re} value={re}>
-                {re}
+            {approvalTypeOptions.map((type) => (
+              <option key={type} value={type}>
+                {type}
               </option>
             ))}
           </select>
@@ -192,36 +177,27 @@ export const ApprovedExpenses = () => {
         <table className="expenses-table">
           <thead>
             <tr>
-              <th>User</th>
-              <th>Category</th>
+              <th>Supplier</th>
               <th>Amount</th>
-              <th>Description</th>
-              <th>Reimbursement Entity</th>
-              <th>Project Details</th>
-              <th>Created Date</th>
-              <th>Approved Date</th>
+              <th>Purchase Date</th>
+              <th>User Approval</th>
+              <th>Final Approval</th>
+              <th>Director Approval</th>
+              <th>Notes</th>
+              <th>Created</th>
+              <th>Updated</th>
             </tr>
           </thead>
           <tbody>
             {filteredExpenses.map((expense) => (
               <tr key={expense.id}>
-                <td>{expense.userName}</td>
-                <td>{expense.category}</td>
-                <td>
-                  {expense.amount} {expense.currency}
-                </td>
-                <td>{expense.description}</td>
-                <td>{expense.reimbursementEntity}</td>
-                <td>
-                  {expense.projectCompanyName && expense.projectName ? (
-                    <>
-                      <div>{expense.projectCompanyName}</div>
-                      <div className="project-name">{expense.projectName}</div>
-                    </>
-                  ) : (
-                    "N/A"
-                  )}
-                </td>
+                <td>{expense.supplierName}</td>
+                <td>{expense.totalAmount}</td>
+                <td>{new Date(expense.purchaseDate).toLocaleDateString()}</td>
+                <td>{expense.userSelectedApproval}</td>
+                <td>{expense.finalApprovalType}</td>
+                <td>{expense.requiresDirectorApproval ? "Yes" : "No"}</td>
+                <td>{expense.notes}</td>
                 <td>{new Date(expense.createdAt).toLocaleDateString()}</td>
                 <td>{new Date(expense.updatedAt).toLocaleDateString()}</td>
               </tr>
