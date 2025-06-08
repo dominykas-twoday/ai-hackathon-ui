@@ -40,58 +40,24 @@ function useAuthMagicLink() {
 function AppRoutes() {
   const isAuthenticated = useAuthMagicLink();
 
-  return (
+  return isAuthenticated ? (
     <div className="app-container">
-      {isAuthenticated && <Sidebar />}
+      <Sidebar />
       <main className="main-content">
         <Routes>
-          <Route
-            path="/"
-            element={
-              isAuthenticated ? <Navigate to="/form" replace /> : <Login />
-            }
-          />
-          <Route
-            path="/form"
-            element={
-              isAuthenticated ? <ExpenseForm /> : <Navigate to="/" replace />
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              isAuthenticated ? <AdminPanel /> : <Navigate to="/" replace />
-            }
-          />
-          <Route
-            path="/expenses"
-            element={
-              isAuthenticated ? (
-                <ExpenseApprovals />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/approved"
-            element={
-              isAuthenticated ? (
-                <ApprovedExpenses />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="*"
-            element={
-              isAuthenticated ? <Navigate to="/form" replace /> : <Login />
-            }
-          />
+          <Route path="/" element={<Navigate to="/form" replace />} />
+          <Route path="/form" element={<ExpenseForm />} />
+          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/expenses" element={<ExpenseApprovals />} />
+          <Route path="/approved" element={<ApprovedExpenses />} />
+          <Route path="*" element={<Navigate to="/form" replace />} />
         </Routes>
       </main>
     </div>
+  ) : (
+    <Routes>
+      <Route path="*" element={<Login />} />
+    </Routes>
   );
 }
 
