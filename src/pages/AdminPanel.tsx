@@ -87,7 +87,7 @@ const AdminPanel = () => {
 
   return (
     <div className="admin-panel">
-      <h1>Admin Panel</h1>
+      <h1>User Management</h1>
       <div className="users-table-container">
         <table className="users-table">
           <thead>

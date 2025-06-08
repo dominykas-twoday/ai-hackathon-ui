@@ -29,8 +29,12 @@
 }
 
 .users-table th {
-  background-color: #383838;
-  font-weight: 600;
+  font-weight: 500;
+  color: #a0a0a0;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: transparent;
 }
 
 .users-table tr:hover {
