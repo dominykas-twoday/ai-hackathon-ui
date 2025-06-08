@@ -41,6 +41,10 @@
   background-color: #383838;
 }
 
+.users-table tr:last-child td {
+  border-bottom: none;
+}
+
 .role-select {
   padding: 0.5rem;
   border-radius: 4px;
