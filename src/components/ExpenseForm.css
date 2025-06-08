@@ -3,7 +3,6 @@
   justify-content: center;
   align-items: flex-start;
   min-height: 100vh;
-  background-color: #1a1a1a;
   color: #ffffff;
   padding: 2rem 1rem;
 }
@@ -194,4 +193,15 @@
 
 .back-button:active {
   background-color: #383838;
+}
+
+.expense-form-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.expense-form-page h1 {
+  text-align: left;
+  margin-bottom: 2rem;
 }

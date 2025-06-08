@@ -195,12 +195,15 @@ const ExpenseForm = () => {
   );
 
   return (
-    <div className="expense-form-container">
-      <form onSubmit={handleSubmit} className="expense-form">
-        {step === 1 && renderStep1()}
-        {step === 2 && renderStep2()}
-        {step === 3 && renderStep3()}
-      </form>
+    <div className="expense-form-page">
+      <h1>New Expense</h1>
+      <div className="expense-form-container">
+        <form onSubmit={handleSubmit} className="expense-form">
+          {step === 1 && renderStep1()}
+          {step === 2 && renderStep2()}
+          {step === 3 && renderStep3()}
+        </form>
+      </div>
     </div>
   );
 };

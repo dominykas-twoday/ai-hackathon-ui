@@ -11,12 +11,6 @@
   margin-bottom: 2rem;
 }
 
-.approved-expenses-header h1 {
-  color: #ffffff;
-  font-size: 1.5rem;
-  margin: 0;
-}
-
 .export-button {
   display: flex;
   align-items: center;
