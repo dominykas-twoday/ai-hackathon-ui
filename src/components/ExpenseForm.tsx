@@ -59,7 +59,7 @@ const ExpenseForm = () => {
       const payload = {
         documentId: formData.documentId,
         supplierName: formData.supplierName,
-        totalAmount: formData.invoiceAmount,
+        totalAmount: formData.invoiceAmount.replace(",", "."),
         purchaseDate: formData.purchaseDate,
         userSelectedApproval: formData.userSelectedApproval,
         notes: formData.notes,
