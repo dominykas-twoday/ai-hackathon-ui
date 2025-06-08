@@ -57,17 +57,22 @@ const ExpenseApprovals = () => {
   const handleStatusChange = async (expenseId: number, newStatus: string) => {
     try {
       const token = localStorage.getItem("auth_token");
-      const res = await fetch(
-        `http://localhost:8080/api/tax-returns/${expenseId}/status`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
+      let endpoint = "";
+      const method = "POST";
+
+      if (newStatus === "APPROVED") {
+        endpoint = `http://localhost:8080/api/tax-returns/${expenseId}/approve`;
+      } else if (newStatus === "REJECTED") {
+        endpoint = `http://localhost:8080/api/tax-returns/${expenseId}/reject`;
+      }
+
+      const res = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
 
       if (!res.ok) {
         throw new Error("Failed to update expense status");
