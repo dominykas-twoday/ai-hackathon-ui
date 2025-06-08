@@ -124,7 +124,7 @@ const ExpenseApprovals = () => {
         <table className="expenses-table">
           <thead>
             <tr>
-              <th>User</th>
+              <th>UsPendinger</th>
               <th>Category</th>
               <th>Amount</th>
               <th>Description</th>

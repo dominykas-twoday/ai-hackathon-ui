@@ -2,46 +2,19 @@ import { useEffect, useState } from "react";
 import type { User, UserRole } from "../types/User";
 import "./AdminPanel.css";
 
-// Mock data for development
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    role: "user",
-    createdAt: "2024-03-15T10:00:00Z",
-    updatedAt: "2024-03-15T10:00:00Z",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    role: "coach",
-    createdAt: "2024-03-14T15:30:00Z",
-    updatedAt: "2024-03-14T15:30:00Z",
-  },
-  {
-    id: "3",
-    name: "Bob Wilson",
-    email: "bob@example.com",
-    role: "committee_lead",
-    createdAt: "2024-03-13T09:15:00Z",
-    updatedAt: "2024-03-13T09:15:00Z",
-  },
-  {
-    id: "4",
-    name: "Alice Brown",
-    email: "alice@example.com",
-    role: "director",
-    createdAt: "2024-03-12T14:45:00Z",
-    updatedAt: "2024-03-12T14:45:00Z",
-  },
+const ROLE_OPTIONS: UserRole[] = [
+  "USER",
+  "COACH",
+  "COMMITTEE_LEAD",
+  "DIRECTOR",
+  "ADMIN",
 ];
 
 const AdminPanel = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [roleChangeError, setRoleChangeError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -50,9 +23,13 @@ const AdminPanel = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setUsers(mockUsers);
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch("http://localhost:8080/users", {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (!res.ok) throw new Error("Failed to fetch users");
+      const data = await res.json();
+      setUsers(Array.isArray(data) ? data : [data]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -61,19 +38,25 @@ const AdminPanel = () => {
   };
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    setRoleChangeError(null);
+    const token = localStorage.getItem("auth_token");
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      setUsers(
-        users.map((user) =>
-          user.id === userId
-            ? { ...user, role: newRole, updatedAt: new Date().toISOString() }
-            : user
+      const res = await fetch("http://localhost:8080/roles/assign", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ userId, newRole }),
+      });
+      if (!res.ok) throw new Error("Failed to update role");
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id === userId ? { ...user, role: newRole } : user
         )
       );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+    } catch {
+      setRoleChangeError("Failed to update user role. Please try again.");
     }
   };
 
@@ -92,20 +75,22 @@ const AdminPanel = () => {
         <table className="users-table">
           <thead>
             <tr>
-              <th>Name</th>
+              <th>First Name</th>
+              <th>Last Name</th>
               <th>Email</th>
+              <th>Verified</th>
               <th>Role</th>
-              <th>Created At</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => (
               <tr key={user.id}>
-                <td>{user.name}</td>
+                <td>{user.firstName}</td>
+                <td>{user.lastName}</td>
                 <td>{user.email}</td>
+                <td>{user.verified ? "Yes" : "No"}</td>
                 <td>{user.role}</td>
-                <td>{new Date(user.createdAt).toLocaleDateString()}</td>
                 <td>
                   <select
                     value={user.role}
@@ -114,16 +99,20 @@ const AdminPanel = () => {
                     }
                     className="role-select"
                   >
-                    <option value="user">User</option>
-                    <option value="coach">Coach</option>
-                    <option value="committee_lead">Committee Lead</option>
-                    <option value="director">Director</option>
+                    {ROLE_OPTIONS.map((role) => (
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
+                    ))}
                   </select>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        {roleChangeError && (
+          <div className="admin-panel-error">{roleChangeError}</div>
+        )}
       </div>
     </div>
   );

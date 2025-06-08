@@ -1,10 +1,15 @@
-export type UserRole = "user" | "coach" | "committee_lead" | "director";
+export type UserRole =
+  | "USER"
+  | "COACH"
+  | "COMMITTEE_LEAD"
+  | "DIRECTOR"
+  | "ADMIN";
 
 export interface User {
   id: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  name: string;
+  verified: boolean;
   role: UserRole;
-  createdAt: string;
-  updatedAt: string;
 }
