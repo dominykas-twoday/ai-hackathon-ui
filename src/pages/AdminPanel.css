@@ -67,3 +67,9 @@
 .admin-panel-error {
   color: #ff6b6b;
 }
+
+.users-table td:last-child {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
